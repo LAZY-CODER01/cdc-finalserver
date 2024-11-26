@@ -18,8 +18,8 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/',(req,res)=>{
-  res.send('Welcome to the API');
-})
+// app.use('/',(req,res)=>{
+//   res.send('Welcome to the API');
+// })
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
