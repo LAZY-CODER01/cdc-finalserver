@@ -9,7 +9,14 @@ const leaderboardRoutes = require('./routes/leaderboard');
 dotenv.config();
 const app = express();
 app.use(express.json());
-app.use(cors());
+const corsOptions = {
+  origin: ['https://cdc-main-eta.vercel.app'], // Replace with your frontend URL(s)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow only required methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Include any necessary headers
+  credentials: true, // Enable if cookies or authentication are required
+};
+
+app.use(cors(corsOptions));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
