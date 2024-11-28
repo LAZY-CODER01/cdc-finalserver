@@ -47,8 +47,8 @@ router.post('/addMembers', authMiddleware, roleMiddleware('Team Leader'), async 
     }
 
     // Ensure the team doesn't exceed 4 members
-    if (team.members.length + members.length > 4) {
-      return res.status(400).json({ message: 'A team cannot have more than 4 members.' });
+    if (team.members.length + members.length > 3) {
+      return res.status(400).json({ message: 'A team cannot have more than 3 members.' });
     }
 
     for (const member of members) {
