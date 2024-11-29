@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 const corsOptions = {
-  origin: ['https://cdc-main.vercel.app','http://localhost:5173'], // Replace with your frontend URL(s)
+  origin: ['https://https://cdc-main-eta.vercel.app','http://localhost:5173'], // Replace with your frontend URL(s)
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow only required methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Include any necessary headers
   credentials: true, // Enable if cookies or authentication are required
