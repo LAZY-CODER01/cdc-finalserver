@@ -6,17 +6,34 @@ const authMiddleware = require('../middleware/auth');
 
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password,phone, role, college, universityRollNo } = req.body;
+
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = new User({ name, email, password: hashedPassword, role });
+    // Create a new user
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      role,
+      college: college || 'MMMUT', // Default to MMMUT if not provided
+      universityRollNo
+    });
+
     await user.save();
-    res.status(201).send('User created');
+    res.status(201).send('User created successfully');
   } catch (err) {
-    res.status(400).send(err.message);
+    if (err.code === 11000) {
+      res.status(400).send('Email or University Roll Number already exists');
+    } else {
+      res.status(400).send(err.message);
+    }
   }
 });
+
 
 router.post('/login', async (req, res) => {
   try {
