@@ -20,6 +20,11 @@ router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res)
     const team = new Team({ name, leaderId: req.user.id, members: [req.user.id] });
     await team.save();
 
+
+      // Update the team leader's user data with the teamId
+      await User.findByIdAndUpdate(req.user.id, { teamId: team._id });
+
+
     res.status(201).json({ message: 'Team created successfully', teamId: team._id });
   } catch (err) {
     res.status(500).json({ message: 'An error occurred', error: err.message });
@@ -30,7 +35,7 @@ router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     // Find the team created by the logged-in leader
-    const team = await Team.findOne({ leaderId: req.user.id }).populate('members', 'name email phone universityRollNo codeforceHandle'); 
+    const team = await Team.findOne({ leaderId: req.user.id }).populate('members', 'name email phone college universityRollNo codeforceHandle'); 
 
     if (!team) {
       return res.status(404).json({ message: 'No team found for this leader.' });
@@ -147,6 +152,24 @@ router.put('/members/:memberId', authMiddleware, roleMiddleware('Team Leader'), 
     await member.save();
 
     res.status(200).json({ message: 'Member details updated successfully', member });
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred', error: err.message });
+  }
+});
+
+// Fetch team details by teamId
+router.get('/:teamId', authMiddleware, async (req, res) => {
+  try {
+    const { teamId } = req.params;
+
+    // Find the team by ID and populate member details
+    const team = await Team.findById(teamId).populate('members', 'name email phone universityRollNo codeforceHandle');
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    res.status(200).json({ team });
   } catch (err) {
     res.status(500).json({ message: 'An error occurred', error: err.message });
   }
