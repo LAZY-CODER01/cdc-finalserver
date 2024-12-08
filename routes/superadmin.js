@@ -95,9 +95,9 @@ router.delete('/users/:userId', authMiddleware, roleMiddleware('Superadmin'), as
 });
 
 // Get all teams
-router.get('/teams', authMiddleware, roleMiddleware('Superadmin'), async (req, res) => {
+router.get('/teams', authMiddleware, async (req, res) => {
   try {
-    const teams = await Team.find().populate('members', 'name email');
+    const teams = await Team.find().populate('members', 'name email college codeforceHandle');
     res.status(200).json(teams);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching teams', error: err.message });
