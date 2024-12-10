@@ -174,7 +174,34 @@ router.get('/:teamId', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'An error occurred', error: err.message });
   }
 });
+//Fetch team paymentstatus changes
+router.put('/paymentStatus', authMiddleware, async (req, res) => {
+  try {
+    const { teamName, paymentStatus } = req.body;
 
+    if (!teamName || !paymentStatus) {
+      return res.status(400).json({ message: 'Team name and payment status are required.' });
+    }
+
+    const team = await Team.findOne({ name: teamName });
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found.' });
+    }
+
+    if (!['incomplete', 'pending', 'accepted', 'rejected'].includes(paymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status.' });
+    }
+
+    // Update the payment status and last updated date
+    team.payment.status = paymentStatus;
+    team.payment.lastUpdated = Date.now();
+    await team.save();
+
+    res.status(200).json({ message: 'Payment status updated successfully', team });
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred', error: err.message });
+  }
+});
 
 
 module.exports = router;
