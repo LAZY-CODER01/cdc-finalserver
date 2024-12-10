@@ -8,8 +8,8 @@ const teamSchema = new mongoose.Schema({
   payment: {
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'rejected'],
-      default: 'pending',
+      enum: ['incomplete','pending', 'accepted', 'rejected'],
+      default: 'incomplete',
     },
     lastUpdated: { type: Date, default: Date.now } // Optional: track the last update
   }
