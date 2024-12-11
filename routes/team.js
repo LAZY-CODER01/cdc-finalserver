@@ -4,6 +4,8 @@ const Team = require('../models/Team');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/role');
+const { ObjectId } = require('mongoose').Types; 
+const mongoose = require('mongoose');
 
 // Create a new team
 router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res) => {
@@ -23,6 +25,7 @@ router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res)
 
       // Update the team leader's user data with the teamId
       await User.findByIdAndUpdate(req.user.id, { teamId: team._id });
+      console.log(team._id);
 
 
     res.status(201).json({ message: 'Team created successfully', teamId: team._id });
@@ -157,13 +160,13 @@ router.put('/members/:memberId', authMiddleware, roleMiddleware('Team Leader'), 
   }
 });
 
-// Fetch team details by teamId
-router.get('/:teamId', authMiddleware, async (req, res) => {
+// Fetch teamid details by teamName
+router.get('/:teamName', authMiddleware, async (req, res) => {
   try {
-    const { teamId } = req.params;
+    const { name } = req.params;
 
     // Find the team by ID and populate member details
-    const team = await Team.findById(teamId).populate('members', 'name email phone universityRollNo codeforceHandle');
+    const team = await Team.findBy(name).populate('members', 'name email phone universityRollNo codeforceHandle');
 
     if (!team) {
       return res.status(404).json({ message: 'Team not found' });
@@ -174,11 +177,11 @@ router.get('/:teamId', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'An error occurred', error: err.message });
   }
 });
-//Fetch team paymentstatus changes
-router.put('/paymentStatus', authMiddleware, async (req, res) => {
+
+router.post('/paymentStatus', authMiddleware, async (req, res) => {
   try {
     const { teamId, paymentStatus } = req.body;
-
+    console.log("post is running");
     // Validate input
     if (!teamId || !paymentStatus) {
       return res.status(400).json({ message: 'Team ID and payment status are required.' });
@@ -186,6 +189,11 @@ router.put('/paymentStatus', authMiddleware, async (req, res) => {
 
     if (!['incomplete', 'pending', 'accepted', 'rejected'].includes(paymentStatus)) {
       return res.status(400).json({ message: 'Invalid payment status.' });
+    }
+
+    // Validate that teamId is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(teamId)) {
+      return res.status(400).json({ message: 'Invalid team ID format.' });
     }
 
     // Find and update the team's payment status
@@ -197,6 +205,7 @@ router.put('/paymentStatus', authMiddleware, async (req, res) => {
       },
       { new: true } // Return the updated document
     );
+    console.log(updatedTeam);
 
     if (!updatedTeam) {
       return res.status(404).json({ message: 'Team not found.' });
@@ -204,9 +213,13 @@ router.put('/paymentStatus', authMiddleware, async (req, res) => {
 
     res.status(200).json({ message: 'Payment status updated successfully', team: updatedTeam });
   } catch (err) {
+    console.error('Error occurred while updating payment status:', err);
     res.status(500).json({ message: 'Error updating payment status', error: err.message });
   }
 });
+
+
+
 
 
 module.exports = router;
