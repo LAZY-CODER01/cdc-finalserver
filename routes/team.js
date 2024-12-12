@@ -11,7 +11,11 @@ const mongoose = require('mongoose');
 router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res) => {
   try {
     const { name } = req.body;
-
+    //check if the team name already exist
+    const existingTeamByName = await Team.findOne({ name });
+    if (existingTeamByName) {
+      return res.status(400).json({ message: 'Team name already exists. Please choose a different name.' });
+    } 
     // Check if the leader already has a team
     const existingTeam = await Team.findOne({ leaderId: req.user.id });
     if (existingTeam) {
@@ -86,6 +90,11 @@ router.post('/addMembers', authMiddleware, roleMiddleware('Team Leader'), async 
           password: leader.password 
         });
         await user.save();
+      }else if (user.teamId) {
+        // If the user is already part of another team, reject the request
+        return res.status(400).json({ 
+          message: `User with email ${member.email} is already part of another team.` 
+        });
       }
 
       if (!team.members.includes(user._id)) {
@@ -107,7 +116,11 @@ router.put('/:teamId', authMiddleware, roleMiddleware('Team Leader'), async (req
   try {
     const { name } = req.body;
     const teamId = req.params.teamId;
-
+    // Check if the team name already exists (exclude the current team)
+    const existingTeam = await Team.findOne({ name, _id: { $ne: teamId } });
+    if (existingTeam) {
+      return res.status(400).json({ message: 'Team name already exists. Please choose a different name.' });
+    }
     const team = await Team.findById(teamId);
     if (!team) {
       return res.status(404).json({ message: 'Team not found' });
