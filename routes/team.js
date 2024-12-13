@@ -191,6 +191,42 @@ router.get('/:teamName', authMiddleware, async (req, res) => {
   }
 });
 
+// Fetch teamid details by teamName
+// router.get('/:teamName', authMiddleware, async (req, res) => {
+//   try {
+//     const { teamName } = req.params;
+
+//     // Find the team by name and populate member details
+//     const team = await Team.findOne({ name: teamName }).populate(
+//       'members',
+//       'name email phone universityRollNo codeforceHandle'
+//     );
+
+//     if (!team) {
+//       return res.status(404).json({ message: 'Team not found' });
+//     }
+
+//     res.status(200).json({ team });
+//   } catch (err) {
+//     res.status(500).json({ message: 'An error occurred', error: err.message });
+//   }
+// });
+router.get('/:teamId', authMiddleware, async (req, res) => {
+  try {
+    const { teamId } = req.params;
+
+    // Find the team by ID and populate member details
+    const team = await Team.findById(teamId).populate('members', 'name email phone universityRollNo codeforceHandle');
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    res.status(200).json({ team });
+  } catch (err) {
+    res.status(500).json({ message: 'An error occurred', error: err.message });
+  }
+});
 router.post('/paymentStatus', authMiddleware, async (req, res) => {
   try {
     const { teamId, paymentStatus } = req.body;
