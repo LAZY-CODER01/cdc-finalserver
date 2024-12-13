@@ -4,33 +4,31 @@ const Team = require('../models/Team');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/role');
-const { ObjectId } = require('mongoose').Types; 
 const mongoose = require('mongoose');
 
 // Create a new team
 router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res) => {
   try {
     const { name } = req.body;
-    //check if the team name already exist
+
+    // Check if the team name already exists
     const existingTeamByName = await Team.findOne({ name });
     if (existingTeamByName) {
       return res.status(400).json({ message: 'Team name already exists. Please choose a different name.' });
-    } 
+    }
+
     // Check if the leader already has a team
     const existingTeam = await Team.findOne({ leaderId: req.user.id });
     if (existingTeam) {
       return res.status(400).json({ message: 'You have already created a team.' });
     }
 
-    // Create a new team and add the team leader to the members array
+    // Create a new team and add the leader to the members array
     const team = new Team({ name, leaderId: req.user.id, members: [req.user.id] });
     await team.save();
 
-
-      // Update the team leader's user data with the teamId
-      await User.findByIdAndUpdate(req.user.id, { teamId: team._id });
-      console.log(team._id);
-
+    // Update the leader's user data with the teamId
+    await User.findByIdAndUpdate(req.user.id, { teamId: team._id });
 
     res.status(201).json({ message: 'Team created successfully', teamId: team._id });
   } catch (err) {
@@ -38,14 +36,17 @@ router.post('/', authMiddleware, roleMiddleware('Team Leader'), async (req, res)
   }
 });
 
-// Get team details for the leader
+// Get team details for the logged-in user
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    // Find the team created by the logged-in leader
-    const team = await Team.findOne({ leaderId: req.user.id }).populate('members', 'name email phone college universityRollNo codeforceHandle'); 
+    // Find the team where the logged-in user is a member
+    const team = await Team.findOne({ members: req.user.id }).populate(
+      'members',
+      'name email phone universityRollNo codeforceHandle'
+    );
 
     if (!team) {
-      return res.status(404).json({ message: 'No team found for this leader.' });
+      return res.status(404).json({ message: 'No team found for this user.' });
     }
 
     res.status(200).json({ team });
@@ -72,6 +73,7 @@ router.post('/addMembers', authMiddleware, roleMiddleware('Team Leader'), async 
     if (team.members.length + members.length > 3) {
       return res.status(400).json({ message: 'A team cannot have more than 3 members.' });
     }
+
     const leader = await User.findById(team.leaderId);
     if (!leader) {
       return res.status(404).json({ message: 'Team leader not found' });
@@ -85,13 +87,12 @@ router.post('/addMembers', authMiddleware, roleMiddleware('Team Leader'), async 
           email: member.email, 
           phone: member.phone, 
           universityRollNo: member.universityRollNo, 
-          codeforceHandle: member.codeforceHandle ,
+          codeforceHandle: member.codeforceHandle,
           college: leader.college,
-          password: leader.password 
+          password: leader.password // Default password (can be updated later)
         });
         await user.save();
-      }else if (user.teamId) {
-        // If the user is already part of another team, reject the request
+      } else if (user.teamId) {
         return res.status(400).json({ 
           message: `User with email ${member.email} is already part of another team.` 
         });
@@ -116,11 +117,13 @@ router.put('/:teamId', authMiddleware, roleMiddleware('Team Leader'), async (req
   try {
     const { name } = req.body;
     const teamId = req.params.teamId;
+
     // Check if the team name already exists (exclude the current team)
     const existingTeam = await Team.findOne({ name, _id: { $ne: teamId } });
     if (existingTeam) {
       return res.status(400).json({ message: 'Team name already exists. Please choose a different name.' });
     }
+
     const team = await Team.findById(teamId);
     if (!team) {
       return res.status(404).json({ message: 'Team not found' });
@@ -173,29 +176,15 @@ router.put('/members/:memberId', authMiddleware, roleMiddleware('Team Leader'), 
   }
 });
 
-// Fetch teamid details by teamName
-router.get('/:teamName', authMiddleware, async (req, res) => {
-  try {
-    const { name } = req.params;
-
-    // Find the team by ID and populate member details
-    const team = await Team.findBy(name).populate('members', 'name email phone universityRollNo codeforceHandle');
-
-    if (!team) {
-      return res.status(404).json({ message: 'Team not found' });
-    }
-
-    res.status(200).json({ team });
-  } catch (err) {
-    res.status(500).json({ message: 'An error occurred', error: err.message });
-  }
-});
 // Fetch team details by teamId
 router.get('/:teamId', authMiddleware, async (req, res) => {
   try {
     const { teamId } = req.params;
 
-    // Find the team by ID and populate member details
+    if (!mongoose.Types.ObjectId.isValid(teamId)) {
+      return res.status(400).json({ message: 'Invalid team ID format.' });
+    }
+
     const team = await Team.findById(teamId).populate('members', 'name email phone universityRollNo codeforceHandle');
 
     if (!team) {
@@ -208,11 +197,11 @@ router.get('/:teamId', authMiddleware, async (req, res) => {
   }
 });
 
+// Update payment status
 router.post('/paymentStatus', authMiddleware, async (req, res) => {
   try {
     const { teamId, paymentStatus } = req.body;
-    console.log("post is running");
-    // Validate input
+
     if (!teamId || !paymentStatus) {
       return res.status(400).json({ message: 'Team ID and payment status are required.' });
     }
@@ -221,12 +210,10 @@ router.post('/paymentStatus', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment status.' });
     }
 
-    // Validate that teamId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(teamId)) {
       return res.status(400).json({ message: 'Invalid team ID format.' });
     }
 
-    // Find and update the team's payment status
     const updatedTeam = await Team.findByIdAndUpdate(
       teamId,
       { 
@@ -235,7 +222,6 @@ router.post('/paymentStatus', authMiddleware, async (req, res) => {
       },
       { new: true } // Return the updated document
     );
-    console.log(updatedTeam);
 
     if (!updatedTeam) {
       return res.status(404).json({ message: 'Team not found.' });
@@ -243,13 +229,8 @@ router.post('/paymentStatus', authMiddleware, async (req, res) => {
 
     res.status(200).json({ message: 'Payment status updated successfully', team: updatedTeam });
   } catch (err) {
-    console.error('Error occurred while updating payment status:', err);
     res.status(500).json({ message: 'Error updating payment status', error: err.message });
   }
 });
-
-
-
-
 
 module.exports = router;
