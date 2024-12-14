@@ -15,13 +15,13 @@ const sendVerificationEmail = (email, otp) => {
     service: 'gmail',
     port: 465, // Use your email service
     auth: {
-      user: "abhisheksingh97606@gmail.com", // EmailJS User ID
+      user: "cdcmmmutotp@gmail.com", // EmailJS User ID
       pass: process.env.EMAILJS_PASS, // Your email password or app-specific password
     },
   });
 
   const mailOptions = {
-    from: 'CDC@gmail.com',
+    from: 'cdcmmmutotp@gmail.com',
     to: email,
     subject: 'Email Verification',
     text: `Your OTP for email verification is: ${otp}`,
