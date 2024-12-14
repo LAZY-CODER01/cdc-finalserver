@@ -21,7 +21,7 @@ const sendVerificationEmail = (email, otp) => {
   });
 
   const mailOptions = {
-    from: 'abhisheksingh97606@gmail.com',
+    from: 'CDC@gmail.com',
     to: email,
     subject: 'Email Verification',
     text: `Your OTP for email verification is: ${otp}`,
